@@ -1,36 +1,23 @@
-# Makefile for Custom PS1 BIOS
-TARGET = custom
-TYPE = bin
-
-# Toolchain (provided by the Docker container)
 CC = mipsel-unknown-elf-gcc
 LD = mipsel-unknown-elf-ld
 OBJCOPY = mipsel-unknown-elf-objcopy
+CHECKSUM = python3 fix_checksum.py
 
-# Compiler and linker flags based on the OpenBIOS project
-CFLAGS = -Wall -O2 -G0 -mips1 -mfp32 -mno-abicalls -fno-builtin -fno-stack-protector -nostdlib -nostartfiles
+CFLAGS = -Wall -O2 -G0 -mips1 -mfp32 -mno-abicalls \
+         -fno-builtin -fno-stack-protector -nostdlib -nostartfiles
 LDFLAGS = -T bios.ld -nostdlib
 
-# Source files
-SRCS = bios.c
+all: custom.bios
 
-# Object files
-OBJS = $(SRCS:.c=.o)
+custom.elf: bios.c bios.ld
+	$(CC) $(CFLAGS) -Wl,-T,bios.ld -Wl,-nostdlib -o $@ bios.c
 
-all: $(TARGET).bin
-
-$(TARGET).elf: $(OBJS)
-	$(LD) $(LDFLAGS) -o $@ $^
-
-$(TARGET).bin: $(TARGET).elf
+custom.bios: custom.elf fix_checksum.py
 	$(OBJCOPY) -O binary $< $@
 	truncate -s 0x80000 $@
-	python3 fix_checksum.py $@
-
-%.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CHECKSUM) $@
 
 clean:
-	rm -f $(OBJS) $(TARGET).elf $(TARGET).bin
+	rm -f custom.elf custom.bios
 
 .PHONY: all clean
