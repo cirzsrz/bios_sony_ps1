@@ -1,4 +1,5 @@
 OUTPUT_ARCH(mipsel)
+OUTPUT_FORMAT(elf32-littlemips)
 ENTRY(_reset)
 
 MEMORY {
