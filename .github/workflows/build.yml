@@ -11,13 +11,15 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Build with Docker (official OpenBIOS method)
+    - name: Install system toolchain (simpler, no Docker issues)
       run: |
-        docker run --rm \
-          -v $PWD:/src \
-          -w /src \
-          ghcr.io/grumpycoders/pcsx-redux-build:latest \
-          /bin/bash -c "make clean && make"
+        sudo apt-get update
+        sudo apt-get install -y gcc-mipsel-linux-gnu binutils-mipsel-linux-gnu python3
+
+    - name: Build BIOS
+      run: |
+        make clean
+        make
 
     - name: Upload BIOS artifact
       uses: actions/upload-artifact@v4
