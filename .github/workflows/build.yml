@@ -6,24 +6,25 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install real PS1 toolchain
+    - name: Download and setup PS1 toolchain
       run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential git python3
-        git clone https://github.com/JaCzekanski/openbios-build.git
-        cd openbios-build
-        ./build-toolchain.sh
+        wget -q https://github.com/grumpycoders/pcsx-redux/releases/download/latest/mipsel-unknown-elf.tar.gz
+        tar -xzf mipsel-unknown-elf.tar.gz
         echo "$(pwd)/mipsel-unknown-elf/bin" >> $GITHUB_PATH
 
     - name: Build BIOS
       run: |
-        make clean
-        make
+        mipsel-unknown-elf-gcc -nostdlib -nostartfiles -Wall -O2 -G0 -mips1 -mfp32 \
+          -mno-abicalls -fno-builtin -fno-stack-protector \
+          -Wl,-T,bios.ld -Wl,-nostdlib -o custom.elf bios.c
+        mipsel-unknown-elf-objcopy -O binary custom.elf custom.bios
+        truncate -s 0x80000 custom.bios
+        python3 fix_checksum.py custom.bios
 
     - name: Upload BIOS artifact
       uses: actions/upload-artifact@v4
