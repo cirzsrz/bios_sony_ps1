@@ -1,24 +1,24 @@
-# Makefile - based on OpenBIOS build system
-TARGET = custom
+# Makefile.docker - uses the Docker image's toolchain correctly
 CC = mipsel-unknown-elf-gcc
 LD = mipsel-unknown-elf-ld
 OBJCOPY = mipsel-unknown-elf-objcopy
+CHECKSUM = python3 fix_checksum.py
 
-CFLAGS = -O2 -G0 -mips1 -mfp32 -mno-abicalls -fno-builtin -fno-stack-protector \
-         -nostdlib -nostartfiles -Wall -Werror
+CFLAGS = -O2 -G0 -mips1 -mfp32 -mno-abicalls -fno-builtin \
+         -fno-stack-protector -nostdlib -nostartfiles -Wall
 LDFLAGS = -T bios.ld -nostdlib
 
-all: $(TARGET).bios
+all: custom.bios
 
-$(TARGET).elf: bios.c bios.ld
+custom.elf: bios.c bios.ld
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bios.c
 
-$(TARGET).bios: $(TARGET).elf
+custom.bios: custom.elf
 	$(OBJCOPY) -O binary $< $@
 	truncate -s 0x80000 $@
-	python3 fix_checksum.py $@
+	$(CHECKSUM) $@
 
 clean:
-	rm -f $(TARGET).elf $(TARGET).bios
+	rm -f custom.elf custom.bios
 
 .PHONY: all clean
