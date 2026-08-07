@@ -11,20 +11,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Download and setup PS1 toolchain
+    - name: Build with Docker (official OpenBIOS method)
       run: |
-        wget -q https://github.com/grumpycoders/pcsx-redux/releases/download/latest/mipsel-unknown-elf.tar.gz
-        tar -xzf mipsel-unknown-elf.tar.gz
-        echo "$(pwd)/mipsel-unknown-elf/bin" >> $GITHUB_PATH
-
-    - name: Build BIOS
-      run: |
-        mipsel-unknown-elf-gcc -nostdlib -nostartfiles -Wall -O2 -G0 -mips1 -mfp32 \
-          -mno-abicalls -fno-builtin -fno-stack-protector \
-          -Wl,-T,bios.ld -Wl,-nostdlib -o custom.elf bios.c
-        mipsel-unknown-elf-objcopy -O binary custom.elf custom.bios
-        truncate -s 0x80000 custom.bios
-        python3 fix_checksum.py custom.bios
+        docker run --rm \
+          -v $PWD:/src \
+          -w /src \
+          ghcr.io/grumpycoders/pcsx-redux-build:latest \
+          /bin/bash -c "make clean && make"
 
     - name: Upload BIOS artifact
       uses: actions/upload-artifact@v4
