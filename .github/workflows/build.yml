@@ -1,0 +1,45 @@
+name: Build Custom PS1 BIOS
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install toolchain
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-mipsel-linux-gnu binutils-mipsel-linux-gnu python3 truncate
+
+    - name: Build BIOS
+      run: |
+        make clean
+        make
+
+    - name: Upload BIOS artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: custom-ps1-bios
+        path: custom.bios
+
+    - name: Attach to release (if release)
+      if: github.event_name == 'release'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./custom.bios
+        asset_name: custom.bios
+        asset_content_type: application/octet-stream
