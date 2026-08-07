@@ -11,27 +11,15 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install dependencies
+    - name: Install MIPS toolchain
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3 build-essential git
-
-    - name: Install psn00b SDK toolchain
-      run: |
-        git clone https://github.com/grumpycoders/pcsx-redux.git
-        cd pcsx-redux
-        make -C src/mips
-        sudo make -C src/mips install
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        sudo apt-get install -y gcc-mipsel-linux-gnu binutils-mipsel-linux-gnu python3 truncate
 
     - name: Build BIOS
       run: |
-        mipsel-unknown-elf-gcc -nostdlib -nostartfiles -Wall -O2 -G0 -mips1 -mfp32 \
-          -mno-abicalls -fno-builtin -fno-stack-protector \
-          -Wl,-T,bios.ld -Wl,-nostdlib -o custom.elf bios.c
-        mipsel-unknown-elf-objcopy -O binary custom.elf custom.bios
-        truncate -s 0x80000 custom.bios
-        python3 fix_checksum.py custom.bios
+        make clean
+        make
 
     - name: Upload BIOS artifact
       uses: actions/upload-artifact@v4
