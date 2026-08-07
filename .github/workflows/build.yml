@@ -5,24 +5,19 @@ on:
 
 jobs:
   build:
+    name: "Build BIOS"
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install MIPS toolchain
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-mipsel-linux-gnu binutils-mipsel-linux-gnu python3
+      - name: Build with Docker
+        run: |
+          docker run --rm -v $PWD:/src -w /src ghcr.io/grumpycoders/pcsx-redux-build:latest \
+          bash -c "make clean && make"
 
-    - name: Build BIOS
-      run: |
-        make clean
-        make
-
-    - name: Upload BIOS artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: custom-ps1-bios
-        path: custom.bios
+      - name: Upload BIOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: custom-ps1-bios
+          path: custom.bios
