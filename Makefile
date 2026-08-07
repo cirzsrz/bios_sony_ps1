@@ -4,7 +4,7 @@ OBJCOPY = mipsel-linux-gnu-objcopy
 CHECKSUM = python3 fix_checksum.py
 
 CFLAGS = -nostdlib -nostartfiles -Wall -O2 -G0 -march=r3000 -mtune=r3000 \
-         -mno-abicalls -fno-builtin -fno-stack-protector
+         -mfp32 -mno-abicalls -fno-builtin -fno-stack-protector
 LDFLAGS = -T bios.ld -nostdlib
 
 all: custom.bios
