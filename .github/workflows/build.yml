@@ -11,13 +11,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Build with OpenBIOS method
+    - name: Build with PCSX-Redux Docker (official method)
       run: |
         docker run --rm \
           -v $PWD:/src \
           -w /src \
+          --entrypoint /bin/bash \
           ghcr.io/grumpycoders/pcsx-redux-build:latest \
-          /bin/bash -c "source /etc/profile && make clean && make"
+          -c ". /etc/profile && cd /src && make -f Makefile.docker"
 
     - name: Upload BIOS artifact
       uses: actions/upload-artifact@v4
