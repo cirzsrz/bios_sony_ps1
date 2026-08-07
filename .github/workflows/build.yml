@@ -1,7 +1,7 @@
 name: Build Custom PS1 BIOS
 
 on:
-  workflow_dispatch:   # only manual trigger from Actions tab
+  workflow_dispatch:
 
 jobs:
   build:
@@ -11,29 +11,30 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install toolchain
+    - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc-mipsel-linux-gnu binutils-mipsel-linux-gnu python3
+        sudo apt-get install -y python3 build-essential git
+
+    - name: Install psn00b SDK toolchain
+      run: |
+        git clone https://github.com/grumpycoders/pcsx-redux.git
+        cd pcsx-redux
+        make -C src/mips
+        sudo make -C src/mips install
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Build BIOS
       run: |
-        make clean
-        make
+        mipsel-unknown-elf-gcc -nostdlib -nostartfiles -Wall -O2 -G0 -mips1 -mfp32 \
+          -mno-abicalls -fno-builtin -fno-stack-protector \
+          -Wl,-T,bios.ld -Wl,-nostdlib -o custom.elf bios.c
+        mipsel-unknown-elf-objcopy -O binary custom.elf custom.bios
+        truncate -s 0x80000 custom.bios
+        python3 fix_checksum.py custom.bios
 
     - name: Upload BIOS artifact
       uses: actions/upload-artifact@v4
       with:
         name: custom-ps1-bios
         path: custom.bios
-
-    - name: Attach to release (if release)
-      if: github.event_name == 'release'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./custom.bios
-        asset_name: custom.bios
-        asset_content_type: application/octet-stream
