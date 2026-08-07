@@ -5,19 +5,28 @@ on:
 
 jobs:
   build:
-    name: "Build BIOS"
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Build with Docker
-        run: |
-          docker run --rm -v $PWD:/src -w /src ghcr.io/grumpycoders/pcsx-redux-build:latest \
-          bash -c "make clean && make"
+    - name: Install real PS1 toolchain
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential git python3
+        git clone https://github.com/JaCzekanski/openbios-build.git
+        cd openbios-build
+        ./build-toolchain.sh
+        echo "$(pwd)/mipsel-unknown-elf/bin" >> $GITHUB_PATH
 
-      - name: Upload BIOS artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: custom-ps1-bios
-          path: custom.bios
+    - name: Build BIOS
+      run: |
+        make clean
+        make
+
+    - name: Upload BIOS artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: custom-ps1-bios
+        path: custom.bios
