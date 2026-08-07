@@ -1,25 +1,24 @@
-# Makefile – uses system mipsel-linux-gnu toolchain
-CC = mipsel-linux-gnu-gcc
-OBJCOPY = mipsel-linux-gnu-objcopy
-CHECKSUM = python3 fix_checksum.py
+# Makefile - based on OpenBIOS build system
+TARGET = custom
+CC = mipsel-unknown-elf-gcc
+LD = mipsel-unknown-elf-ld
+OBJCOPY = mipsel-unknown-elf-objcopy
 
-# These are the EXACT flags from PCSX-Redux common.mk
-ARCHFLAGS = -march=mips1 -mabi=32 -EL -fno-pic -mno-shared -mno-abicalls \
-            -mfp32 -mno-llsc -fno-stack-protector -nostdlib -ffreestanding
-CFLAGS = $(ARCHFLAGS) -Wall -O2 -G0 -fno-builtin -fno-strict-aliasing
-LDFLAGS = -nostdlib -Wl,-T,bios.ld -Wl,--oformat=elf32-tradlittlemips
+CFLAGS = -O2 -G0 -mips1 -mfp32 -mno-abicalls -fno-builtin -fno-stack-protector \
+         -nostdlib -nostartfiles -Wall -Werror
+LDFLAGS = -T bios.ld -nostdlib
 
-all: custom.bios
+all: $(TARGET).bios
 
-custom.elf: bios.c bios.ld
+$(TARGET).elf: bios.c bios.ld
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bios.c
 
-custom.bios: custom.elf fix_checksum.py
+$(TARGET).bios: $(TARGET).elf
 	$(OBJCOPY) -O binary $< $@
 	truncate -s 0x80000 $@
-	$(CHECKSUM) $@
+	python3 fix_checksum.py $@
 
 clean:
-	rm -f custom.elf custom.bios
+	rm -f $(TARGET).elf $(TARGET).bios
 
 .PHONY: all clean
