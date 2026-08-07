@@ -1,16 +1,18 @@
-CC = mipsel-unknown-elf-gcc
-LD = mipsel-unknown-elf-ld
-OBJCOPY = mipsel-unknown-elf-objcopy
+# Makefile – uses system mipsel-linux-gnu toolchain
+CC = mipsel-linux-gnu-gcc
+OBJCOPY = mipsel-linux-gnu-objcopy
 CHECKSUM = python3 fix_checksum.py
 
-CFLAGS = -Wall -O2 -G0 -mips1 -mfp32 -mno-abicalls \
-         -fno-builtin -fno-stack-protector -nostdlib -nostartfiles
-LDFLAGS = -T bios.ld -nostdlib
+# These are the EXACT flags from PCSX-Redux common.mk
+ARCHFLAGS = -march=mips1 -mabi=32 -EL -fno-pic -mno-shared -mno-abicalls \
+            -mfp32 -mno-llsc -fno-stack-protector -nostdlib -ffreestanding
+CFLAGS = $(ARCHFLAGS) -Wall -O2 -G0 -fno-builtin -fno-strict-aliasing
+LDFLAGS = -nostdlib -Wl,-T,bios.ld -Wl,--oformat=elf32-tradlittlemips
 
 all: custom.bios
 
 custom.elf: bios.c bios.ld
-	$(CC) $(CFLAGS) -Wl,-T,bios.ld -Wl,-nostdlib -o $@ bios.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bios.c
 
 custom.bios: custom.elf fix_checksum.py
 	$(OBJCOPY) -O binary $< $@
